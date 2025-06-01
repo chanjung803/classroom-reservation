@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main_page.dart';
+import 'package:flutter_application_1/screens/main_page.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController idController = TextEditingController();
@@ -11,10 +11,13 @@ class LoginPage extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Color(0xFF9C2C38),
-        title: Text('로그인 페이지'),
+        title: Text(
+          '로그인 페이지',
+          style: TextStyle(color: Colors.white), // 텍스트 색상 추가
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home, color: Colors.white), // 아이콘 색상 추가
             onPressed: () {
               // 홈 버튼 클릭 시 동작
               print("홈버튼 클릭");
@@ -58,13 +61,16 @@ class LoginPage extends StatelessWidget {
             SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
+                // TODO: 실제 로그인 로직 구현 필요
+                // 현재는 단순히 MainPage로 이동
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => MainPage(
-                      date: '2024.04.07 (월)',  // 여기 임시로 넘겨줌
-                      room: 'D421',            // 임시 강의실
-                      time: '09:00',            // 임시 시간대
+                      // 로그인 시 초기 예약 정보를 넘겨줄 필요가 없으므로 제거
+                      // date: '2024.04.07 (월)',
+                      // room: 'D421',
+                      // time: '09:00',
                     ),
                   ),
                 );
@@ -75,7 +81,7 @@ class LoginPage extends StatelessWidget {
               ),
               child: Text(
                 '로그인',
-                style: TextStyle(fontSize: 18, color: Colors.black),
+                style: TextStyle(fontSize: 18, color: Colors.white), // 텍스트 색상 변경
               ),
             ),
           ],

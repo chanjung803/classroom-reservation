@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'reservation_page.dart';
-
-
+import 'package:flutter_application_1/screens/reservation_page.dart';
 
 class RoomSelectionPage extends StatelessWidget {
   final List<String> rooms = List.generate(10, (i) => 'D42${i + 1}');
@@ -15,10 +13,13 @@ class RoomSelectionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('강의실 선택'),
+        title: Text(
+          '강의실 선택',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Color(0xFF9C2C38),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -40,7 +41,7 @@ class RoomSelectionPage extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    // ⬇️ 시간 버튼 수평 슬라이드로 변경
+                    // 시간 버튼 수평 슬라이드로 변경
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -55,6 +56,7 @@ class RoomSelectionPage extends StatelessWidget {
                                     builder: (context) => ReservationPage(
                                       room: rooms[roomIndex],
                                       time: time,
+                                      isDetailView: false, // 새 예약 모드
                                     ),
                                   ),
                                 );
@@ -65,7 +67,7 @@ class RoomSelectionPage extends StatelessWidget {
                               ),
                               child: Text(
                                 time,
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(color: Colors.white),
                               ),
                             ),
                           );
