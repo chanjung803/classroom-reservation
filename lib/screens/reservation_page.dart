@@ -9,22 +9,26 @@ import 'package:intl/date_symbol_data_local.dart';
 class ReservationPage extends StatefulWidget {
   final String room;
   final String time;
+  final DateTime selectedDate; // 새로 추가된 선택된 날짜 필드
   // 예약 상세 보기 시 사용할 선택적 매개변수들
   final String? name;
   final String? studentId;
   final String? major;
-  final String? date;
-  final bool isDetailView; // 이 페이지가 예약 상세를 보여주는 용도인지, 새 예약을 위한 용도인지 구분
+  final String? date; // 기존의 date 필드는 string 형태였으나, selectedDate가 DateTime으로 추가됨.
+                      // 상세 보기 시에는 date를 사용하여 표시할 수 있도록 유지.
+  final bool isDetailView;
 
   ReservationPage({
+    Key? key, // Key 추가
     required this.room,
     required this.time,
+    required this.selectedDate, // 생성자에 추가
     this.name,
     this.studentId,
     this.major,
     this.date,
-    this.isDetailView = false, // 기본값은 새 예약
-  });
+    this.isDetailView = false,
+  }) : super(key: key); // Key 전달
 
   @override
   _ReservationPageState createState() => _ReservationPageState();
@@ -32,19 +36,14 @@ class ReservationPage extends StatefulWidget {
 
 class _ReservationPageState extends State<ReservationPage> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController studentIdController = TextEditingController(); // 학번 컨트롤러
+  final TextEditingController studentIdController = TextEditingController();
   final TextEditingController majorController = TextEditingController();
-  late String currentDate;
+  // late String currentDate; // 이제 selectedDate를 사용하므로 이 변수는 필요 없음
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('ko_KR', null).then((_) {
-      DateTime now = DateTime.now();
-      setState(() {
-        currentDate = DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(now);
-      });
-    });
+    initializeDateFormatting('ko_KR', null); // DateFormat을 위해 초기화
 
     // 상세 보기 모드일 경우 기존 데이터로 채움
     if (widget.isDetailView) {
@@ -64,19 +63,19 @@ class _ReservationPageState extends State<ReservationPage> {
 
   void handleReservation() {
     if (nameController.text.isEmpty ||
-        studentIdController.text.isEmpty || // 학번 검사
+        studentIdController.text.isEmpty ||
         majorController.text.isEmpty) {
       showToast("모든 항목을 입력해주세요.");
       return;
     }
 
-    // 새로운 Reservation 객체 생성
+    // 선택된 날짜를 사용하여 Reservation 객체 생성
     final newReservation = Reservation(
-      date: currentDate,
+      date: DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(widget.selectedDate), // 선택된 날짜 사용
       room: widget.room,
       time: widget.time,
       name: nameController.text,
-      studentId: studentIdController.text, // 학번 저장
+      studentId: studentIdController.text,
       major: majorController.text,
     );
 
@@ -84,7 +83,7 @@ class _ReservationPageState extends State<ReservationPage> {
 
     showToast("예약이 완료되었습니다.");
 
-    // 필드 초기화 (필요하다면)
+    // 필드 초기화
     nameController.clear();
     studentIdController.clear();
     majorController.clear();
@@ -93,7 +92,7 @@ class _ReservationPageState extends State<ReservationPage> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (context) => MainPage(), // MainPage는 이제 초기값을 받지 않음
+        builder: (context) => MainPage(), // const 추가
       ),
       (Route<dynamic> route) => false, // 모든 이전 라우트 제거
     );
@@ -101,69 +100,74 @@ class _ReservationPageState extends State<ReservationPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 상세 보기 모드일 때는 widget.date를, 새 예약 모드일 때는 widget.selectedDate를 사용
+    String displayDate = widget.isDetailView
+        ? widget.date!
+        : DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(widget.selectedDate);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.isDetailView ? '예약 상세' : '예약', // 타이틀 변경
-          style: TextStyle(color: Colors.white),
+          widget.isDetailView ? '예약 상세' : '예약',
+          style: const TextStyle(color: Colors.white), // const 추가
         ),
-        backgroundColor: Color(0xFF9C2C38),
+        backgroundColor: const Color(0xFF9C2C38), // const 추가
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
             Text(
-              '${widget.room} / ${widget.time} ${widget.isDetailView ? '(예약 상세)' : '예약'}', // 상세 보기 표시
-              style: TextStyle(fontSize: 22, color: Color(0xFF9C2C38)),
+              '$displayDate | ${widget.room} / ${widget.time} ${widget.isDetailView ? '(예약 상세)' : '예약'}',
+              style: const TextStyle(fontSize: 22, color: Color(0xFF9C2C38)), // const 추가
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16), // const 추가
             TextField(
               controller: nameController,
               decoration: InputDecoration(
                 labelText: '이름',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(), // const 추가
                 filled: true,
                 fillColor: Colors.grey[200],
               ),
-              readOnly: widget.isDetailView, // 상세 보기 모드에서는 읽기 전용
+              readOnly: widget.isDetailView,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16), // const 추가
             TextField(
-              controller: studentIdController, // 학번 필드
+              controller: studentIdController,
               decoration: InputDecoration(
                 labelText: '학번',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(), // const 추가
                 filled: true,
                 fillColor: Colors.grey[200],
               ),
-              readOnly: widget.isDetailView, // 상세 보기 모드에서는 읽기 전용
+              readOnly: widget.isDetailView,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16), // const 추가
             TextField(
               controller: majorController,
               decoration: InputDecoration(
                 labelText: '학과',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(), // const 추가
                 filled: true,
                 fillColor: Colors.grey[200],
               ),
-              readOnly: widget.isDetailView, // 상세 보기 모드에서는 읽기 전용
+              readOnly: widget.isDetailView,
             ),
-            SizedBox(height: 24),
-            Text(
+            const SizedBox(height: 24), // const 추가
+            const Text( // const 추가
               '예약 안내문: 예약 후 5분 이내 미입실 시 자동취소됩니다.',
               style: TextStyle(fontSize: 14, color: Colors.red),
             ),
-            SizedBox(height: 24),
-            if (!widget.isDetailView) // 새 예약 모드일 때만 '예약 확정' 버튼 표시
+            const SizedBox(height: 24), // const 추가
+            if (!widget.isDetailView)
               ElevatedButton(
                 onPressed: handleReservation,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF9C2C38),
-                  minimumSize: Size(double.infinity, 50),
+                  backgroundColor: const Color(0xFF9C2C38), // const 추가
+                  minimumSize: const Size(double.infinity, 50), // const 추가
                 ),
-                child: Text(
+                child: const Text( // const 추가
                   '예약 확정',
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),

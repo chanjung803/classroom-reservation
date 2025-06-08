@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/main.dart'; // main.dart에서 allReservations 접근
 import 'package:flutter_application_1/models/reservation.dart'; // Reservation 모델 임포트
 import 'package:flutter_application_1/screens/reservation_page.dart'; // 예약 상세 페이지로 이동
+import 'package:intl/intl.dart'; // DateTime.parse를 위해 추가
 
 // 정렬 순서를 위한 Enum
 enum SortOrder { ascending, descending }
 
 class ReservationListPage extends StatefulWidget {
+  const ReservationListPage({Key? key}) : super(key: key); // Key 추가
   @override
   _ReservationListPageState createState() => _ReservationListPageState();
 }
@@ -41,8 +43,9 @@ class _ReservationListPageState extends State<ReservationListPage> {
       int comparison = 0;
       if (_sortBy == 'date') {
         // 날짜 정렬
-        DateTime dateA = DateTime.parse(a.date.substring(0, 10).replaceAll('.', ''));
-        DateTime dateB = DateTime.parse(b.date.substring(0, 10).replaceAll('.', ''));
+        // 'yyyy.MM.dd (E)' 형식에서 날짜만 추출하여 DateTime으로 파싱
+        DateTime dateA = DateFormat('yyyy.MM.dd (E)', 'ko_KR').parse(a.date);
+        DateTime dateB = DateFormat('yyyy.MM.dd (E)', 'ko_KR').parse(b.date);
         comparison = dateA.compareTo(dateB);
       } else if (_sortBy == 'room') {
         // 강의실 이름 정렬 (알파벳 순)
@@ -70,7 +73,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       _applyFiltersAndSort(); // 삭제 후 리스트 갱신
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('예약이 삭제되었습니다.')),
+      const SnackBar(content: Text('예약이 삭제되었습니다.')), // const 추가
     );
   }
 
@@ -78,14 +81,14 @@ class _ReservationListPageState extends State<ReservationListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text( // const 추가
           '예약 목록',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Color(0xFF9C2C38),
+        backgroundColor: const Color(0xFF9C2C38), // const 추가
         actions: [
           PopupMenuButton<String>(
-            icon: Icon(Icons.sort, color: Colors.white),
+            icon: const Icon(Icons.sort, color: Colors.white), // const 추가
             onSelected: (String result) {
               setState(() {
                 if (result.contains('date')) {
@@ -105,27 +108,27 @@ class _ReservationListPageState extends State<ReservationListPage> {
               });
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>( // const 추가
                 value: 'date_desc',
                 child: Text('날짜별 내림차순'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>( // const 추가
                 value: 'date_asc',
                 child: Text('날짜별 오름차순'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>( // const 추가
                 value: 'room_desc',
                 child: Text('강의실명 내림차순'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>( // const 추가
                 value: 'room_asc',
                 child: Text('강의실명 오름차순'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>( // const 추가
                 value: 'count_desc',
                 child: Text('예약 횟수 내림차순'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>( // const 추가
                 value: 'count_asc',
                 child: Text('예약 횟수 오름차순'),
               ),
@@ -134,7 +137,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
         ],
       ),
       body: _filteredReservations.isEmpty
-          ? Center(
+          ? const Center( // const 추가
               child: Text(
                 '예약 내역이 없습니다.',
                 style: TextStyle(fontSize: 18),
@@ -144,8 +147,12 @@ class _ReservationListPageState extends State<ReservationListPage> {
               itemCount: _filteredReservations.length,
               itemBuilder: (context, index) {
                 final reservation = _filteredReservations[index];
+                // 저장된 String 형태의 날짜를 DateTime으로 변환
+                final parsedDate = DateFormat('yyyy.MM.dd (E)', 'ko_KR').parse(reservation.date);
+
                 return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  key: ValueKey(reservation.room + reservation.time + reservation.date + reservation.name), // Unique Key 추가
+                  margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // const 추가
                   elevation: 2,
                   child: ListTile(
                     title: Text(
@@ -153,7 +160,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                     subtitle: Text(
                         '${reservation.name} (${reservation.studentId}, ${reservation.major})'),
                     trailing: IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.delete, color: Colors.red), // const 추가
                       onPressed: () => _deleteReservation(reservation),
                     ),
                     onTap: () {
@@ -167,8 +174,9 @@ class _ReservationListPageState extends State<ReservationListPage> {
                             name: reservation.name,
                             studentId: reservation.studentId,
                             major: reservation.major,
-                            date: reservation.date, // 날짜 정보 추가
-                            isDetailView: true, // 상세 보기 모드임을 알림
+                            date: reservation.date,
+                            selectedDate: parsedDate, // ⭐ 저장된 날짜를 DateTime으로 변환하여 전달
+                            isDetailView: true,
                           ),
                         ),
                       );

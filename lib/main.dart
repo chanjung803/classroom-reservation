@@ -3,6 +3,7 @@ import 'package:flutter_application_1/screens/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter_application_1/models/reservation.dart';
+import 'package:intl/date_symbol_data_local.dart'; // ⭐ 이 줄을 추가합니다.
 
 // 전역 변수로 선언하여 앱 전체에서 접근 가능하도록 합니다.
 // SharedPreferences를 사용하여 데이터를 영구적으로 저장하고 로드합니다.
@@ -11,9 +12,10 @@ List<Reservation> allReservations = []; // 모든 예약 내역을 저장하는 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ko_KR', null); // ⭐ 이 줄을 추가합니다.
   _prefs = await SharedPreferences.getInstance();
   await _loadReservations(); // 앱 시작 시 저장된 예약 내역 로드
-  runApp(ClassroomReservationApp());
+  runApp(const ClassroomReservationApp()); // ⭐ const 키워드 추가
 }
 
 // 예약 내역을 SharedPreferences에 저장하는 함수
@@ -49,8 +51,9 @@ void removeReservation(Reservation reservation) {
   _saveReservations(); // 삭제 후 저장
 }
 
-
 class ClassroomReservationApp extends StatelessWidget {
+  const ClassroomReservationApp({super.key}); // ⭐ const 생성자 추가
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -58,11 +61,11 @@ class ClassroomReservationApp extends StatelessWidget {
       title: '강의실 예약',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
-        textTheme: TextTheme(
+        textTheme: const TextTheme( // ⭐ const 키워드 추가
           bodyMedium: TextStyle(color: Colors.black87),
         ),
       ),
-      home: LoginPage(), // 시작화면: 로그인
+      home: LoginPage(), // ⭐ const 키워드 추가
     );
   }
 }
