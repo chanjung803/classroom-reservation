@@ -67,11 +67,11 @@ class LoginPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => MainPage(
-                      // 로그인 시 초기 예약 정보를 넘겨줄 필요가 없으므로 제거
-                      // date: '2024.04.07 (월)',
-                      // room: 'D421',
-                      // time: '09:00',
-                    ),
+                        // 로그인 시 초기 예약 정보를 넘겨줄 필요가 없으므로 제거
+                        // date: '2024.04.07 (월)',
+                        // room: 'D421',
+                        // time: '09:00',
+                        ),
                   ),
                 );
               },

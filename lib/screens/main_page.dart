@@ -3,10 +3,9 @@ import 'package:flutter_application_1/screens/room_selection_page.dart';
 import 'package:flutter_application_1/screens/reservation_list_page.dart';
 import 'package:flutter_application_1/main.dart'; // main.dart에서 예약 내역 접근을 위해 임포트
 import 'package:flutter_application_1/models/reservation.dart'; // Reservation 모델 임포트
+import 'package:intl/intl.dart'; // DateFormat을 위해 추가
 
 class MainPage extends StatefulWidget {
-  // MainPage는 이제 특정 예약 정보를 직접 받지 않고,
-  // reservationHistory에서 최신 예약을 가져와 표시할 수 있도록 변경됩니다.
   MainPage();
 
   @override
@@ -40,7 +39,7 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  // 예약 취소 함수
+  // 예약 취소 함수 (예약 내역에서도 삭제)
   void cancelLatestReservation() {
     if (latestReservation != null) {
       removeReservation(latestReservation!); // main.dart의 removeReservation 함수 호출
@@ -53,11 +52,47 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  // 예약 시간 도달 여부 확인
+  bool _isReservationTimeReached() {
+    if (latestReservation == null) return false;
+
+    try {
+      final reservationDate = DateFormat('yyyy.MM.dd (E)', 'ko_KR').parse(latestReservation!.date);
+      final reservationTimeParts = latestReservation!.time.split(':');
+      final reservationHour = int.parse(reservationTimeParts[0]);
+      final reservationMinute = int.parse(reservationTimeParts[1]);
+
+      final reservationDateTime = DateTime(
+        reservationDate.year,
+        reservationDate.month,
+        reservationDate.day,
+        reservationHour,
+        reservationMinute,
+      );
+
+      final now = DateTime.now();
+      final currentDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+      // 현재 시간이 예약 시간과 같거나 예약 시간 이후인지 확인
+      return currentDateTime.isAtSameMomentAs(reservationDateTime) || currentDateTime.isAfter(reservationDateTime);
+
+    } catch (e) {
+      print("날짜/시간 파싱 오류: $e");
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String displayText = (latestReservation != null)
         ? "${latestReservation!.date} | ${latestReservation!.room} | ${latestReservation!.time} 예약중"
         : "예약 정보가 없습니다";
+
+    bool isReservationTimeActive = _isReservationTimeReached();
+    // 강의실 예약 버튼 활성화 여부를 결정하는 변수
+    // latestReservation이 null일 때만 활성화 (현재 예약이 없을 때)
+    bool canMakeNewReservation = latestReservation == null;
+
 
     return Scaffold(
       appBar: AppBar(
@@ -125,14 +160,12 @@ class _MainPageState extends State<MainPage> {
                 title: Text('예약 목록'),
                 onTap: () async {
                   Navigator.pop(context); // 드로어 닫기
-                  // ReservationListPage에서 변경 사항을 반영하기 위해 await 사용
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (context) => ReservationListPage()),
                   );
-                  // 예약 목록 페이지에서 돌아온 후 최신 예약 정보 다시 로드
-                  _loadLatestReservation();
+                  _loadLatestReservation(); // 예약 목록 페이지에서 돌아온 후 최신 예약 정보 다시 로드
                 },
               ),
             ],
@@ -149,7 +182,7 @@ class _MainPageState extends State<MainPage> {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 12),
-            if (latestReservation != null) // 최신 예약이 있을 때만 취소 버튼 표시
+            if (latestReservation != null && !isReservationTimeActive) // 예약 시간이 도달하면 '예약 취소' 버튼 사라짐
               ElevatedButton(
                 onPressed: cancelLatestReservation,
                 style: ElevatedButton.styleFrom(
@@ -166,15 +199,16 @@ class _MainPageState extends State<MainPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ElevatedButton(
-                  onPressed: () {
+                  // latestReservation이 null일 때만 활성화됩니다.
+                  onPressed: canMakeNewReservation ? () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => RoomSelectionPage()),
                     );
-                  },
+                  } : null, // 이미 예약 중이면 비활성화
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF9C2C38),
+                    backgroundColor: canMakeNewReservation ? Color(0xFF9C2C38) : Colors.grey, // 비활성화 시 색상 변경
                     minimumSize: Size(double.infinity, 50),
                   ),
                   child: Text(
@@ -198,29 +232,20 @@ class _MainPageState extends State<MainPage> {
                 ),
                 SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    // TODO: 반납 기능 구현
-                  },
+                  onPressed: isReservationTimeActive && latestReservation != null ? () {
+                    setState(() {
+                      latestReservation = null; // UI에서만 해당 예약 정보를 지웁니다.
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('퇴실 처리되었습니다.')),
+                    );
+                  } : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF9C2C38),
                     minimumSize: Size(double.infinity, 50),
                   ),
                   child: Text(
-                    '반납하기',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    // TODO: 설정 기능 구현
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF9C2C38),
-                    minimumSize: Size(double.infinity, 50),
-                  ),
-                  child: Text(
-                    '설정',
+                    '퇴실하기',
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),

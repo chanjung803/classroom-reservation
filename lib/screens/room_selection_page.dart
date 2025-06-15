@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/reservation_page.dart';
-import 'package:intl/intl.dart'; // DateFormat을 위해 추가
+import 'package:intl/intl.dart';
 
 class RoomSelectionPage extends StatefulWidget {
   const RoomSelectionPage({Key? key}) : super(key: key);
@@ -24,21 +24,21 @@ class _RoomSelectionPageState extends State<RoomSelectionPage> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 6)), // const 추가
+      lastDate: DateTime.now().add(const Duration(days: 6)),
       helpText: '예약 날짜 선택',
       cancelText: '취소',
       confirmText: '선택',
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light( // const 추가
+            colorScheme: const ColorScheme.light(
               primary: Color(0xFF9C2C38),
               onPrimary: Colors.white,
               onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF9C2C38), // const 추가
+                foregroundColor: const Color(0xFF9C2C38),
               ),
             ),
           ),
@@ -51,6 +51,43 @@ class _RoomSelectionPageState extends State<RoomSelectionPage> {
         _selectedDate = picked;
       });
     }
+  }
+
+  // 주어진 시간 문자열이 현재 시간보다 지났는지 확인하는 헬퍼 함수
+  // 수정된 로직: 해당 시간대 '시작 시간'을 기준으로 판단합니다.
+  bool _isTimePast(String time) {
+    final now = DateTime.now();
+    // 현재 시간은 년, 월, 일, 시, 분까지 고려합니다.
+    final currentTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+    final timeParts = time.split(':');
+    final hour = int.parse(timeParts[0]);
+    // final minute = int.parse(timeParts[1]); // 이 부분은 이제 사용하지 않습니다.
+
+    // 선택된 날짜와 비교하려는 시간의 '시작' 시간 (분은 00으로 설정)
+    final targetStartOfHour = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      hour,
+      0, // 해당 시간대의 시작 분을 기준으로 비교
+    );
+
+    // 선택된 날짜가 오늘인 경우
+    if (_selectedDate.year == now.year && _selectedDate.month == now.month && _selectedDate.day == now.day) {
+      // 현재 시간이 해당 시간대의 '시작' 시간 이후이거나 같으면, 즉 이미 시간대가 시작했으면
+      // 이 로직은 `targetStartOfHour.isBefore(currentTime)`로 바뀌어야 합니다.
+      // 13:00 이 13:59까지 활성화되려면, 14:00 (다음 시간대 시작) 부터 비활성화 되어야 합니다.
+      // 따라서, 현재 시간이 해당 시간대의 다음 시간대 시작 시간보다 같거나 클 경우 비활성화
+      final nextHourDateTime = targetStartOfHour.add(const Duration(hours: 1));
+      return currentTime.isAtSameMomentAs(nextHourDateTime) || currentTime.isAfter(nextHourDateTime);
+    }
+    // 선택된 날짜가 오늘보다 이전인 경우 모든 시간은 지났다고 판단하여 비활성화
+    else if (_selectedDate.isBefore(DateTime(now.year, now.month, now.day))) {
+      return true;
+    }
+    // 그 외의 경우 (미래 날짜) 활성화
+    return false;
   }
 
   @override
@@ -109,19 +146,22 @@ class _RoomSelectionPageState extends State<RoomSelectionPage> {
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),
-
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: times.map((time) {
+                                // 현재 시간보다 지났는지 확인
+                                final bool isTimeSlotPast = _isTimePast(time);
+
                                 return Padding(
                                   padding: const EdgeInsets.only(right: 8.0),
                                   child: ElevatedButton(
-                                    onPressed: () {
+                                    // isTimeSlotPast가 true이면 onPressed를 null로 설정하여 버튼 비활성화
+                                    onPressed: isTimeSlotPast ? null : () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => ReservationPage( // 여기에 붙어있던 const를 제거합니다.
+                                          builder: (context) => ReservationPage(
                                             room: rooms[roomIndex],
                                             time: time,
                                             selectedDate: _selectedDate,
@@ -131,12 +171,12 @@ class _RoomSelectionPageState extends State<RoomSelectionPage> {
                                       );
                                     },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF9C2C38),
+                                      backgroundColor: isTimeSlotPast ? Colors.grey : const Color(0xFF9C2C38), // 비활성화 시 색상 변경
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                     ),
                                     child: Text(
                                       time,
-                                      style: const TextStyle(color: Colors.white),
+                                      style: TextStyle(color: isTimeSlotPast ? Colors.black54 : Colors.white), // 비활성화 시 텍스트 색상 변경
                                     ),
                                   ),
                                 );
